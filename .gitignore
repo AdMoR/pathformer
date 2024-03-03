@@ -1,0 +1,7 @@
+dataset/*
+deps/*
+diffvg_compat
+*.pyc
+.ipynb_checkpoints
+venv
+.idea

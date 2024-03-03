@@ -36,14 +36,16 @@ def build_positions_from_ndjson(drawing_blob: Dict) -> List[np.array]:
     return out
 
 
-def build_stroke_transition(stroke_array) -> List[CoordCommand]:
+def build_stroke_transition(stroke_array: List[List[np.array]]) -> List[CoordCommand]:
     """
     in : stroke: List[(index, x, y)]
-    out : stroke List[(command(M if i==0 else L), x, y
+    out : stroke List[(command(M if i==0 else L), dx, dy
     """
     commands = list()
     for stroke in stroke_array:
         for i, path in enumerate(stroke):
+            if len(path) != 2:
+                raise Exception("Invalid coordinate shape")
             if i == 0:
                 commands.append(CoordCommand(LineCommand.M, path))
             else:
@@ -53,11 +55,13 @@ def build_stroke_transition(stroke_array) -> List[CoordCommand]:
     return commands
 
 
-
-def build_dataset(parh):
+def build_dataset(path):
     data = ndjson.load(open(path))
-    array_of_strokes = build_positions_from_ndjson()
-    array_of_commands = build_stroke_transition(array_of_strokes)
-    return array_of_commands
+    documents = list()
+    for i in range(len(data)):
+        array_of_strokes = build_positions_from_ndjson(data[i]["drawing"])
+        array_of_commands = build_stroke_transition(array_of_strokes)
+        documents.append(array_of_commands)
+    return documents
 
 

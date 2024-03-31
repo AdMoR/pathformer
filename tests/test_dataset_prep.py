@@ -3,7 +3,8 @@ import numpy as np
 import ndjson
 import os
 
-from pathformer.datasets.path_dataset import build_dataset, build_stroke_transition, LineCommand
+from pathformer.datasets.path_dataset import (build_dataset, build_stroke_transition, LineCommand,
+                                              find_file_i_for_sample_index, DrawingDataset)
 
 class TestDatasetBuilder(TestCase):
 
@@ -28,10 +29,29 @@ class TestDatasetBuilder(TestCase):
         
     def test_build_stroke_transition(self):
         data = [[np.array([1.0, 1.0]), np.array([2.0, 2.0])]]
-        rez = build_stroke_transition(data)
+        rez = build_stroke_transition(data).strokes
 
         assert len(rez) == 3
         assert rez[0].command_name == LineCommand.M
         assert rez[1].command_name == LineCommand.L
         assert rez[2].command_name == LineCommand.Z
         self.assertAlmostEqual(np.linalg.norm(rez[1].coords - np.array([1, 1])), 0)
+
+    def test_cumsum_array_build(self):
+        doc_len = [12, 34, 120]
+        cumsum_array = np.cumsum(doc_len)
+        self.assertListEqual(cumsum_array.tolist(), [12, 46, 166])
+
+    def test_index_from_cumsum(self):
+        cumsum_array = [12, 46, 166]
+        for dataset_index, data_file_index, reminder in zip([0, 12, 11, 47], [0, 1, 0, 2], [0, 0, 11, 1]):
+            rez = find_file_i_for_sample_index(cumsum_array, dataset_index)
+            self.assertEqual(rez[0], data_file_index, f"results {(dataset_index, data_file_index, reminder)}")
+            self.assertEqual(rez[1], reminder, f"results {(dataset_index, data_file_index, reminder)}")
+
+
+class TestDataset(TestCase):
+
+    def teste2e(self):
+        dd = DrawingDataset("/home/amor/Documents/code_dw/pathformer/dataset/")
+        print(dd[[0, 1]]["coords"].shape)

@@ -45,9 +45,11 @@ class PathRNNModel(nn.Module):
         """
         # TODO
         cmd_input = torch.LongTensor(src["command"])
+        print("ok")
+        coord_input = torch.Tensor(src["coord"])
         B, H, _ = cmd_input.shape
         src_cmd = self.embedding(cmd_input).squeeze(-2)
-        src = torch.cat([src_cmd, torch.Tensor(src["coord"])], axis=-1)
+        src = torch.cat([src_cmd, coord_input], axis=-1)
         pre_hidden = self.linear_pre_hidden(src)
 
         if hidden is None:

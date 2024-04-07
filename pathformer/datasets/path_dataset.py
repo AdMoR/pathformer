@@ -7,6 +7,8 @@ import dataclasses
 import enum
 import torch
 from torch.utils.data import Dataset, DataLoader
+from collections import defaultdict
+import torch
 
 
 class LineCommand(enum.Enum):
@@ -125,6 +127,20 @@ def mapping_func(dict_object: Dict):
     keys = list(results[0].keys())
     final_results = {k: [elem[k] for elem in results] for k in keys}
     return final_results
+
+
+def my_collate(batch, default_value_dict=None):
+    if default_value_dict is None:
+        default_value_dict = defaultdict(lambda: -1)
+    batch_size = len(batch)
+    max_length = max(np.array(e["coord"]).shape[0] for e in batch)
+    out_dict = dict()
+    for k in batch[0].keys():
+        out_dict[k] = torch.Tensor(
+            [np.pad(e[k], pad_width=((0, max_length - len(e[k])), (0, 0)), mode="constant",
+                    constant_values=default_value_dict[k])
+             for e in batch])
+    return out_dict
 
 
 class DrawingDataset(Dataset):

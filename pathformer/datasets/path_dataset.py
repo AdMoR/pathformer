@@ -120,10 +120,18 @@ def mapping_func(dict_object: Dict):
     """
     Used in batch mode, input received is as following :
     "drawing": [{"t": [[1, 4, 5], [88, 92]], "x": [[23, 45, 23], [...]]}]
+
+    Step 1 :
+    Feature building
+    Step 2 :
+    Label dataset augmentation
+
     """
     results = list()
     for drawing, category in zip(dict_object["drawing"], dict_object["word"]):
-        results.append(build_stroke_transition(build_position_from_hf_elem(drawing), category).to_batch_tensor())
+        sample = build_stroke_transition(build_position_from_hf_elem(drawing), category).to_batch_tensor()
+        causal_samples = causal_dataset_transform(sample)
+        results.extend(causal_samples)
     keys = list(results[0].keys())
     final_results = {k: [elem[k] for elem in results] for k in keys}
     return final_results
@@ -141,6 +149,43 @@ def my_collate(batch, default_value_dict=None):
                     constant_values=default_value_dict[k])
              for e in batch])
     return out_dict
+
+
+def causal_dataset_transform(samples):
+    """
+    Doc about expected input format
+    One sample at a time :
+    {"command": (333, 1), "coord": (333, 2)}
+
+    When used in Dataset processing with batch=true and batchsize=1
+
+    """
+    if type(samples) == list:
+        for sample in samples:
+            sample_size, dim = np.array(sample["coord"]).shape
+            for i in range(1, sample_size):
+                truncated_sample = {
+                    k: np.array(np.array(sample[k])[:i, :]) for k in sample.keys()
+                }
+                target_sample = {
+                    f"{k}_target": np.array(sample[k])[i, :] for k in sample.keys()
+                }
+                truncated_sample.update(target_sample)
+                yield truncated_sample
+    elif type(samples) == dict:
+        sample = samples
+        sample_size, dim = np.array(sample["coord"]).shape
+        for i in range(1, sample_size):
+            truncated_sample = {
+                k: np.array(np.array(sample[k])[:i, :]) for k in sample.keys()
+            }
+            target_sample = {
+                f"{k}_target": np.array(sample[k])[i, :] for k in sample.keys()
+            }
+            truncated_sample.update(target_sample)
+            yield truncated_sample
+    else:
+        raise Exception
 
 
 class DrawingDataset(Dataset):

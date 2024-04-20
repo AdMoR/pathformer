@@ -34,9 +34,9 @@ class TestDatasetBuilder(TestCase):
 
     def test_full_dataloader_tf(self):
         dataset = load_dataset('quickdraw', "raw", split='train')
-        sub_dataset = dataset.select(range(10000)).map(mapping_func, batched=True, batch_size=1, num_proc=8,
-                                                        remove_columns=['timestamp', "key_id", "recognized",
-                                                                        "countrycode", "word", "drawing"])
+        sub_dataset = (dataset.select(range(10000)).
+                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
+                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
         dataloader = DataLoader(sub_dataset, batch_size=32, num_workers=1, collate_fn=my_collate, shuffle=True)
         batch = next(iter(dataloader))
         for k in ["command", "coord", "coord_target"]:

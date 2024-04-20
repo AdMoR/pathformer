@@ -17,9 +17,9 @@ class LineCommand(enum.Enum):
         L = "LineTo"
         Z = "End"
     """
-    M = 0
-    L = 1
-    Z = 2
+    M = 1
+    L = 2
+    Z = 3
 
 
 @dataclasses.dataclass
@@ -139,15 +139,16 @@ def mapping_func(dict_object: Dict):
 
 def my_collate(batch, default_value_dict=None):
     if default_value_dict is None:
-        default_value_dict = defaultdict(lambda: -1)
-    batch_size = len(batch)
-    max_length = max(np.array(e["coord"]).shape[0] for e in batch)
+        default_value_dict = defaultdict(lambda: 0)
     out_dict = dict()
-    for k in batch[0].keys():
-        out_dict[k] = torch.Tensor(
-            [np.pad(e[k], pad_width=((0, max_length - len(e[k])), (0, 0)), mode="constant",
-                    constant_values=default_value_dict[k])
-             for e in batch])
+    if len(batch) == 0:
+        return out_dict
+    max_length = max(np.array(e["coord"]).shape[0] for e in batch)
+    keys = batch[0].keys()
+    for k in keys:
+        pad_fn = lambda x: np.pad(x[k], pad_width=((0, max_length - len(x[k])), (0, 0)), mode="constant",
+                                  constant_values=default_value_dict[k]) if "target" not in k else x[k]
+        out_dict[k] = torch.Tensor([pad_fn(e) for e in batch])
     return out_dict
 
 

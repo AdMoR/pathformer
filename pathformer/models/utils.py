@@ -1,24 +1,26 @@
+from typing import Dict
 import torch
 
 # function to generate output sequence using greedy algorithm
-def greedy_decode(model, src, src_mask, max_len, start_symbol):
-    src = src.to(DEVICE)
-    src_mask = src_mask.to(DEVICE)
+def greedy_decode(model, src):
+    """
+    Expectation for the model
+    model: Func[src -> {"coord": Tensor(N, 2), "command": Tensor(N, 1)}]
+    """
+    pass
 
-    memory = model.encode(src, src_mask)
-    ys = torch.ones(1, 1).fill_(start_symbol).type(torch.long).to(DEVICE)
-    for i in range(max_len-1):
-        memory = memory.to(DEVICE)
-        tgt_mask = (generate_square_subsequent_mask(ys.size(0))
-                    .type(torch.bool)).to(DEVICE)
-        out = model.decode(ys, memory, tgt_mask)
-        out = out.transpose(0, 1)
-        prob = model.generator(out[:, -1])
-        _, next_word = torch.max(prob, dim=1)
-        next_word = next_word.item()
 
-        ys = torch.cat([ys,
-                        torch.ones(1, 1).type_as(src.data).fill_(next_word)], dim=0)
-        if next_word == EOS_IDX:
-            break
-    return ys
+def recombine(a, b):
+    pass
+
+
+def draw_sequence(sequence: Dict[str, torch.Tensor]):
+    """
+    Expected format of sequence : {"coord": Tensor(N, S, 2), "command": Tensor(N, S, 1)}
+    """
+    N, _ = sequence["coord"].shape
+    for i in range(N):
+        xy_seq = sequence["coord"][i, :, :].numpy()
+        command_seq = sequence["coord"][i, :, 0].numpy()
+        array_of_strokes = recombine(xy_seq, command_seq)
+

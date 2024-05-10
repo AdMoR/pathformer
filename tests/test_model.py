@@ -13,8 +13,7 @@ class TestModel(TestCase):
     def test_model_forward(self):
         dataset = load_dataset('quickdraw', "raw", split='train[0:100]')
         sub_dataset = (dataset.select(range(10000)).
-                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
-                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
+                       with_transform(mapping_func, columns=["drawing", "word"]))
         dataloader = DataLoader(sub_dataset, batch_size=32, num_workers=1, collate_fn=my_collate, shuffle=True)
         batch = next(iter(dataloader))
         model = PathTransformerModel()
@@ -22,9 +21,8 @@ class TestModel(TestCase):
 
     def test_model_forward(self):
         dataset = load_dataset('quickdraw', "raw", split='train[0:100]')
-        sub_dataset = (dataset.select(range(10000)).
-                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
-                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
+        sub_dataset = (dataset.select(range(100)).
+                       with_transform(mapping_func, columns=["drawing", "word"]))
         dataloader = DataLoader(sub_dataset, batch_size=32, num_workers=1, collate_fn=my_collate, shuffle=True)
         batch = next(iter(dataloader))
         model = PathTransformerModel()
@@ -34,16 +32,16 @@ class TestModel(TestCase):
 
     def test_model_train(self):
         # The count get much higher because of the data augmentation
-        dataset = load_dataset('quickdraw', "raw", split='train[0:1]')
+        dataset = load_dataset('quickdraw', "raw", split='train[0:10]')
         sub_dataset = (dataset.
-                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
-                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
+                       with_transform(mapping_func, columns=["drawing", "word"]))
         dataloader = DataLoader(sub_dataset, batch_size=4, num_workers=1, collate_fn=my_collate, shuffle=True)
 
         writer = mock.MagicMock()
         model = PathTransformerModel(writer=writer)
         model.save_model = mock.Mock()
         model.training_function(dataloader, dataloader, n_epochs=1)
+        print(writer.mock_calls)
         self.assertTrue(any("valid" in str(call_ref) for call_ref in writer.mock_calls), msg="validation call missed")
 
     def test_model_name(self):

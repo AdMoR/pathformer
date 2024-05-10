@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 from pathformer.datasets.path_dataset import (mapping_func, my_collate, causal_dataset_transform)
 
-from pathformer.models.simple import PathRNNModel
+from pathformer.models.simple import PathTransformerModel
 
 class TestDatasetBuilder(TestCase):
 
@@ -20,7 +20,7 @@ class TestDatasetBuilder(TestCase):
     def test_mapping_func(self):
         dataset = load_dataset('quickdraw', "raw", split='train')
         proc_dataset = (dataset.select(range(10000)).
-                        map(mapping_func, batched=True, num_proc=8, remove_columns=['timestamp', "key_id"]))
+                        with_transform(mapping_func, columns=["drawing", "word"]))
         self.assertIsNotNone(proc_dataset[0])
 
     def test_dataloader_tf(self):
@@ -34,9 +34,8 @@ class TestDatasetBuilder(TestCase):
 
     def test_full_dataloader_tf(self):
         dataset = load_dataset('quickdraw', "raw", split='train')
-        sub_dataset = (dataset.select(range(10000)).
-                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
-                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
+        sub_dataset = ((dataset.select(range(10000)).
+                       with_transform(mapping_func, columns=["drawing", "word"])))
         dataloader = DataLoader(sub_dataset, batch_size=32, num_workers=1, collate_fn=my_collate, shuffle=True)
         batch = next(iter(dataloader))
         for k in ["command", "coord", "coord_target"]:

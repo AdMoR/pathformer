@@ -164,19 +164,7 @@ def causal_dataset_transform(samples):
     if type(samples) == list:
         for sample in samples:
             sample_size, dim = np.array(sample["coord"]).shape
-            for i in range(1, sample_size):
-                truncated_sample = {
-                    k: np.array(np.array(sample[k])[:i, :]) for k in sample.keys()
-                }
-                target_sample = {
-                    f"{k}_target": np.array(sample[k])[i, :] for k in sample.keys()
-                }
-                truncated_sample.update(target_sample)
-                yield truncated_sample
-    elif type(samples) == dict:
-        sample = samples
-        sample_size, dim = np.array(sample["coord"]).shape
-        for i in range(1, sample_size):
+            i = np.random.randint(1, sample_size)
             truncated_sample = {
                 k: np.array(np.array(sample[k])[:i, :]) for k in sample.keys()
             }
@@ -185,6 +173,18 @@ def causal_dataset_transform(samples):
             }
             truncated_sample.update(target_sample)
             yield truncated_sample
+    elif type(samples) == dict:
+        sample = samples
+        sample_size, dim = np.array(sample["coord"]).shape
+        i = np.random.randint(1, sample_size)
+        truncated_sample = {
+            k: np.array(np.array(sample[k])[:i, :]) for k in sample.keys()
+        }
+        target_sample = {
+            f"{k}_target": np.array(sample[k])[i, :] for k in sample.keys()
+        }
+        truncated_sample.update(target_sample)
+        yield truncated_sample
     else:
         raise Exception
 

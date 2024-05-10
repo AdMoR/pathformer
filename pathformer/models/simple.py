@@ -106,6 +106,7 @@ nlayers}
                             losses = list()
                             for k, valid_batch in enumerate(valid_dataloader):
                                 losses.append(self.iter_loop(valid_batch, writer_log=False).numpy())
+                            self.writer.add_scalar("valid_loss", np.mean(losses))
                             self.save_model()
 
 

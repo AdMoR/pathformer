@@ -5,7 +5,6 @@ import numpy as np
 import ndjson
 import dataclasses
 import enum
-import torch
 from torch.utils.data import Dataset, DataLoader
 from collections import defaultdict
 import torch
@@ -148,7 +147,9 @@ def my_collate(batch, default_value_dict=None):
     for k in keys:
         pad_fn = lambda x: np.pad(x[k], pad_width=((0, max_length - len(x[k])), (0, 0)), mode="constant",
                                   constant_values=default_value_dict[k]) if "target" not in k else x[k]
-        out_dict[k] = torch.Tensor([pad_fn(e) for e in batch])
+        out_dict[k] = torch.Tensor(np.array([pad_fn(e) for e in batch]))
+        if "command" in k:
+            out_dict[k] = out_dict[k].long()
     return out_dict
 
 

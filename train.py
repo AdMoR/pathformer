@@ -1,11 +1,9 @@
-from unittest import TestCase
 from datasets import load_dataset
-import numpy as np
-import json
-import os
+import torch
 from torch.utils.data import DataLoader
 from pathformer.datasets.path_dataset import (mapping_func, my_collate, causal_dataset_transform)
 from pathformer.models.simple import PathTransformerModel
+from torch.utils.tensorboard import SummaryWriter
 
 
 def build_splits(dataset):
@@ -19,15 +17,15 @@ dataset = load_dataset('quickdraw', "raw", split='train')
 train_dataset, valid_set, test_set = build_splits(dataset)
 
 
-train_prep_dataset = (train_dataset.
-                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
-                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
-valid_prep_dataset = (valid_set.
-                       map(mapping_func, batched=True, batch_size=2, num_proc=8,
-                           remove_columns=['timestamp', "key_id", "recognized", "countrycode", "word", "drawing"]))
-train_dataloader = DataLoader(train_prep_dataset, batch_size=128, num_workers=4, collate_fn=my_collate, shuffle=True)
-valid_dataloader = DataLoader(valid_prep_dataset, batch_size=128, num_workers=4, collate_fn=my_collate, shuffle=True)
+train_prep_dataset = (train_dataset.select(range(1000000))
+                       .with_transform(mapping_func, columns=["drawing", "word"]))
+valid_prep_dataset = (valid_set
+                       .with_transform(mapping_func, columns=["drawing", "word"]))
+train_dataloader = dataloader = DataLoader(train_prep_dataset, batch_size=128, num_workers=6, collate_fn=my_collate,
+                                           pin_memory=True)
+valid_dataloader = DataLoader(valid_prep_dataset, batch_size=64, num_workers=2, collate_fn=my_collate, pin_memory=True)
+writer = SummaryWriter()
 
-
-model = PathTransformerModel()
-model.training_function(train_dataloader, valid_dataloader)
+with torch.amp.autocast(device_type='cuda', dtype=torch.float16):
+    model = PathTransformerModel(writer=writer).cuda()
+    model.training_function(train_dataloader, valid_dataloader)

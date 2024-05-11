@@ -2,7 +2,7 @@ import math
 import os
 import time
 import numpy as np
-from tempfile import TemporaryDirectory
+from tqdm import tqdm
 from typing import Tuple, Dict, Any
 from unittest import mock
 
@@ -53,7 +53,7 @@ nlayers}
               command_target [N x 1]
               coord_target [N x 2]
         """
-        cmd_input = src["command"].long()
+        cmd_input = src["command"]
         coord_input = src["coord"]
         src_cmd = self.embedding(cmd_input).squeeze(-2)
         src = torch.cat([src_cmd, coord_input], dim=-1)
@@ -74,7 +74,7 @@ nlayers}
         # L2 norm on coord
         loss_1 = torch.linalg.norm(out["coord"] - target_coord, 2)
         # Log likelihood on the command head
-        loss_2 = -torch.mean(torch.log(torch.gather(out["command"], 1, target_cmd.long())))
+        loss_2 = -torch.mean(torch.log(torch.gather(out["command"], 1, target_cmd)))
 
         loss = loss_1 + lambda_ * loss_2
 
@@ -93,21 +93,25 @@ nlayers}
         hparams.update({"lr": lr})
         self.writer.add_hparams(hparams, {'hparam/accuracy': 0, 'hparam/loss': 0})
 
-        with torch.amp.autocast(device_type='cuda', dtype=torch.float16):
-            for i in range(n_epochs):
-                for j, batch in enumerate(train_dataloader):
-                    optimizer.zero_grad()
-                    loss = self.iter_loop(batch, writer_log=j % 100 == 0, step=i * len(train_dataloader) + j)
-                    loss.backward()
-                    optimizer.step()
+        for i in range(n_epochs):
+            print(f"Epoch {i}")
+            for j, batch in tqdm(enumerate(train_dataloader)):
+                optimizer.zero_grad()
+                for k in batch.keys():
+                    batch[k] = batch[k].cuda()
+                loss = self.iter_loop(batch, writer_log=j % 100 == 0, step=i * len(train_dataloader) + j)
+                loss.backward()
+                optimizer.step()
 
-                    if j % max(2, int(len(train_dataloader) / 10)) == 0:
-                        with torch.no_grad():
-                            losses = list()
-                            for k, valid_batch in enumerate(valid_dataloader):
-                                losses.append(self.iter_loop(valid_batch, writer_log=False).numpy())
-                            self.writer.add_scalar("valid_loss", np.mean(losses))
-                            self.save_model()
+                if j % max(2, int(len(train_dataloader) / 10)) == 0:
+                    with torch.no_grad():
+                        losses = list()
+                        for k, valid_batch in enumerate(valid_dataloader):
+                            for k in valid_batch.keys():
+                                valid_batch[k] = valid_batch[k].cuda()
+                            losses.append(self.iter_loop(valid_batch, writer_log=False).detach().cpu().numpy())
+                        self.writer.add_scalar("valid_loss", np.mean(losses))
+                        self.save_model()
 
 
     def save_model(self, model_dir="./model_directory"):

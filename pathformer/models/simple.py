@@ -25,7 +25,7 @@ class PathTransformerModel(nn.Module):
 nlayers}
         d_model = command_embedding_size + d_coords
         self.embedding = torch.nn.Embedding(n_command, command_embedding_size, padding_idx=0)
-        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=int(d_model / 2))
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=int(d_model / 2), dim_feedforward=128)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=nlayers)
         self.linear_coords = torch.nn.Linear(d_model, d_coords)
         # n_command includes the padding token, so should we include it in the softmax => porbably not
@@ -72,7 +72,7 @@ nlayers}
         target_cmd = src["command_target"]
 
         # L2 norm on coord
-        loss_1 = torch.linalg.norm(out["coord"] - target_coord, 2)
+        loss_1 = torch.sum((out["coord"] - target_coord) ** 2)
         # Log likelihood on the command head
         loss_2 = -torch.mean(torch.log(torch.gather(out["command"], 1, target_cmd)))
 
@@ -83,6 +83,8 @@ nlayers}
                                     {"classif_loss": loss_2, "regression_loss": loss_1,
                                      "combined_loss": loss}, step)
             self.writer.add_scalar("Time/train/batch", time.time() - tt, step)
+            for k, v in self.named_parameters():
+                self.writer.add_histogram(f"model/weights/{k}", v.data.detach().cpu().numpy())
 
         return loss
 

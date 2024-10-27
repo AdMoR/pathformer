@@ -27,8 +27,11 @@ class CoordCommand:
     coords: np.array
 
     def to_tensor(self) -> Dict[str, torch.Tensor]:
+        """
+        Data is scaled to [0, 1] float range instead
+        """
         return {"command": torch.tensor(self.command_name.value).unsqueeze(0),
-                "coord": torch.tensor(self.coords).unsqueeze(0)}
+                "coord": 1.0 / 255. * torch.tensor(self.coords).unsqueeze(0)}
 
 
 @dataclasses.dataclass

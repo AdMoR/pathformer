@@ -1,0 +1,22 @@
+## How to run the preprocessing
+
+All SVG fills need to be cleaned up based on their source.
+
+Many SVG may have groups, transform and other things.
+
+With [SVGO](https://svgo.dev/docs/), we can simplify a lot the language with mostly low precision path sequences.
+
+Here is an example of command :
+```
+svgo --config=svgo.config.mjs -i output.svg   -p 1 --pretty --indent 2 --multipass --datauri unenc -o output_2.svg
+```
+
+A whole folder can be cleaned up with a recursive cmd :
+```
+for f in *; do
+  echo $f
+  svgo --config=../svgo.config.mjs -i $f  -o $f.new
+done
+```
+
+It avoids some OOM errors

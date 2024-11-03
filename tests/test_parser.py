@@ -6,7 +6,7 @@ class TestParser(TestCase):
 
     def test_parse_document(self):
         #path = "/home/amor/Documents/code_dw/pathformer/dataset/www.svgrepo.com/show/475393/cigarette.svg"
-        path = "/home/amor/Downloads/1271185368.svg"
+        path = "/home/amor/Downloads/svg_data/output.svg"
         rez = parse_document(path)
         self.assertTrue(all(type(x) == dict for x in rez))
 

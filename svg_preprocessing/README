@@ -20,3 +20,12 @@ done
 ```
 
 It avoids some OOM errors
+
+Some files were filed with file type character, they can be cleaned with
+
+```
+for f in *; do
+  echo $f
+  sed 's/data:image\/svg+xml,data:image\/svg+xml,//' $f > $f.new.new
+done
+```

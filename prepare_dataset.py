@@ -4,7 +4,7 @@ from pathformer.datasets.path_dataset_v2 import parse_document
 
 
 if __name__ == "__main__":
-    dir_ = "/media/amor/data/svg_data"
+    dir_ = "/home/amor/Downloads/svg_data/svg_processed"
     files = os.listdir(dir_)
     memory = "./memory.txt"
     if os.path.exists(memory):

@@ -4,10 +4,11 @@ import enum
 from functools import reduce
 import dataclasses
 import xml.etree.ElementTree as ET
-
 import pylab as p
-import svg
-from svg.path import parse_path
+import svgpathtools
+from svgpathtools.parser import parse_path, parse_transform
+from svgpathtools.path import transform
+from svgpathtools import svg2paths, wsvg
 import numpy as np
 
 
@@ -57,24 +58,24 @@ def create_color_command(name: str, rgb: Tuple[int]) -> List[dict]:
 
 def command_to_pre_tensor(c):
     rot_command = list()
-    if type(c) == svg.path.path.CubicBezier:
+    if type(c) == svgpathtools.path.CubicBezier:
         str_commands = [PathCommand.CubicBezier, f"smooth={c.smooth}"]
         float_cmds = [c.start, c.control1, c.control2, c.end]
-    elif type(c) == svg.path.path.Move:
-        str_commands = [PathCommand.MoveTo]
-        float_cmds = [c.end]
-    elif type(c) == svg.path.path.Line:
+    #elif type(c) == svgpathtools.path.Move:
+    #    str_commands = [PathCommand.MoveTo]
+    #    float_cmds = [c.end]
+    elif type(c) == svgpathtools.path.Line:
         str_commands = [PathCommand.LineTo]
         float_cmds = [c.start, c.end]
-    elif type(c) == svg.path.path.Arc:
+    elif type(c) == svgpathtools.path.Arc:
         # Arc(start=(84.477706+715.609836j), radius=(5.880173+5.880173j), rotation=0.0, arc=False, sweep=False, end=(90.370167+709.717376j)),
         str_commands = [PathCommand.Arc,  f"arc={c.arc}", f"sweep={c.sweep}"]
         float_cmds = [c.start, c.radius, c.end]
         rot_command = create_scalar_command("rot", c.rotation)
-    elif type(c) == svg.path.path.Close:
+    elif type(c) == svgpathtools.path.Close:
         str_commands = [PathCommand.BackTo]
         float_cmds = [c.start, c.end]
-    elif type(c) == svg.path.path.QuadraticBezier:
+    elif type(c) == svgpathtools.path.QuadraticBezier:
         str_commands = [PathCommand.QuadraticBezier, f"smooth={c.smooth}"]
         float_cmds = [c.start, c.control, c.end]
     else:
@@ -91,10 +92,11 @@ class SVGPath:
     stroke_color: Optional[Tuple[float, float, float]]
 
     @classmethod
-    def parse_node(cls, attrs):
-        if attrs["d"] is None:
-            raise Exception
-        commands = parse_path(attrs["d"])
+    def parse_node(cls, commands, attrs):
+
+        if len(commands) == 0:
+            return list()
+
         fill = parse_color(attrs, "fill")
         stroke_color = parse_color(attrs, "stroke-color")
         stroke_width = attrs.get("stroke-width", 1)
@@ -142,18 +144,25 @@ def parse_document(path):
     """
     '/home/amor/Documents/code_dw/pathformer/dataset/www.svgrepo.com/show/475393/cigarette.svg'
     """
-    tree = ET.parse(path)
-    root = tree.getroot()
+    #tree = ET.parse(path)
+    #root = tree.getroot()
 
-    paths = create_str_command([SpecialTokens.START.value])
+    my_paths = create_str_command([SpecialTokens.START.value])
 
-    for child in root:
-        node_type = child.tag.split("}")[1]
-        if node_type == "path":
-            attrs = child.attrib
-            paths.extend(SVGPath.parse_node(attrs))
+    paths, attributes, *other_attrs = svg2paths(path)
+    new_paths = list()
+    for p, attrs in zip(paths, attributes):
+        print(p, attrs, {p})
+        tf = parse_transform(attrs["transform"])
+        new_path = transform(p, tf)
+        my_paths.extend(SVGPath.parse_node(new_path, attrs))
 
-    paths.extend(create_str_command([SpecialTokens.END.value]))
+    #for child in root:
+    #    node_type = child.tag.split("}")[1]
+    #    if node_type == "path" and child.attrib.get("d"):
+    #        paths.extend(SVGPath.parse_node(child.attrib))
 
-    return paths
+    my_paths.extend(create_str_command([SpecialTokens.END.value]))
+
+    return my_paths
 

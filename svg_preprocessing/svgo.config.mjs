@@ -7,28 +7,27 @@ export default {
   },
   plugins: [
     "moveGroupAttrsToElems",
-    "convertStyleToAttrs",
+    "collapseGroups",
     {
       name: "convertPathData",
       params: {
         applyTransforms: true,
         applyTransformsStroked: true,
-        straightCurves: true,
-        convertToQ: true,
-        lineShorthands: true,
-        convertToZ: true,
-        curveSmoothShorthands: true,
+        straightCurves: false,
+        convertToQ: false,
+        lineShorthands: false,
+        convertToZ: false,
+        curveSmoothShorthands: false,
         floatPrecision: 1,
-        transformPrecision: 2,
-        smartArcRounding: true,
+        transformPrecision: 1,
+        smartArcRounding: false,
         removeUseless: true,
         collapseRepeated: true,
         utilizeAbsolute: true,
         negativeExtraSpace: true,
-        forceAbsolutePath: false
+        forceAbsolutePath: true
       }
     },
-    "convertTransform",
     {
       name: "convertColors",
       params: {
@@ -40,6 +39,7 @@ export default {
         shortname: false
       }
     },
-    "cleanupIds"
+    "cleanupIds",
+    "convertTransform"
   ],
 };

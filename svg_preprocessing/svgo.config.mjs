@@ -8,6 +8,7 @@ export default {
   plugins: [
     "moveGroupAttrsToElems",
     "collapseGroups",
+    "mergePaths"
     {
       name: "convertPathData",
       params: {
@@ -18,14 +19,14 @@ export default {
         lineShorthands: false,
         convertToZ: false,
         curveSmoothShorthands: false,
-        floatPrecision: 1,
-        transformPrecision: 1,
+        floatPrecision: 2,
+        transformPrecision: 2,
         smartArcRounding: false,
         removeUseless: true,
         collapseRepeated: true,
-        utilizeAbsolute: true,
+        utilizeAbsolute: false,
         negativeExtraSpace: true,
-        forceAbsolutePath: true
+        forceAbsolutePath: false
       }
     },
     {
@@ -39,7 +40,6 @@ export default {
         shortname: false
       }
     },
-    "cleanupIds",
-    "convertTransform"
+    "cleanupIds"
   ],
 };

@@ -1,5 +1,8 @@
 import abc
 from unittest import TestCase
+
+import svgpathtools
+
 from pathformer.datasets.path_dataset_v2 import parse_document, create_merged_2D_command, SVGPath
 
 class TestParser(TestCase):
@@ -17,6 +20,6 @@ class TestParser(TestCase):
             self.assertEqual(rez[i]["value"], expected, i)
 
     def test_parse_nodes(self):
-        attrs = {'d': 'M207.340874 688.760491', "fill": '#404041'}
-        rez = SVGPath.parse_node(attrs)
+        path = svgpathtools.Path(svgpathtools.Line(200+300j, 250+350j), svgpathtools.Line(200+310j, 250+360j))
+        rez = SVGPath.parse_node(path, {"fill": "#FFFFFF"})
         self.assertTrue(all(type(x) == dict for x in rez))

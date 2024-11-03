@@ -18,10 +18,11 @@ if __name__ == "__main__":
             continue
         try:
             rez = parse_document(os.path.join(dir_, f))
+            print("=>> ", len(rez))
             last_i = i
             with open(memory, "w") as f:
                 f.write(str(i))
-        except ValueError as e:
+        except (ValueError, KeyError, TypeError, AssertionError) as e:
             print(f"{f} failed with : {e}")
         #pickle.dump(rez, open(f, "wb"))
 

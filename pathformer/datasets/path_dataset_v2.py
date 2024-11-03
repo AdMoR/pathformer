@@ -59,7 +59,7 @@ def create_color_command(name: str, rgb: Tuple[int]) -> List[dict]:
 def command_to_pre_tensor(c):
     rot_command = list()
     if type(c) == svgpathtools.path.CubicBezier:
-        str_commands = [PathCommand.CubicBezier, f"smooth={c.smooth}"]
+        str_commands = [PathCommand.CubicBezier]
         float_cmds = [c.start, c.control1, c.control2, c.end]
     #elif type(c) == svgpathtools.path.Move:
     #    str_commands = [PathCommand.MoveTo]
@@ -69,14 +69,11 @@ def command_to_pre_tensor(c):
         float_cmds = [c.start, c.end]
     elif type(c) == svgpathtools.path.Arc:
         # Arc(start=(84.477706+715.609836j), radius=(5.880173+5.880173j), rotation=0.0, arc=False, sweep=False, end=(90.370167+709.717376j)),
-        str_commands = [PathCommand.Arc,  f"arc={c.arc}", f"sweep={c.sweep}"]
+        str_commands = [PathCommand.Arc,  f"arc={c.large_arc}", f"sweep={c.sweep}"]
         float_cmds = [c.start, c.radius, c.end]
         rot_command = create_scalar_command("rot", c.rotation)
-    elif type(c) == svgpathtools.path.Close:
-        str_commands = [PathCommand.BackTo]
-        float_cmds = [c.start, c.end]
     elif type(c) == svgpathtools.path.QuadraticBezier:
-        str_commands = [PathCommand.QuadraticBezier, f"smooth={c.smooth}"]
+        str_commands = [PathCommand.QuadraticBezier]
         float_cmds = [c.start, c.control, c.end]
     else:
         raise Exception(f"{c}, {type(c)}, {str(type(c)) == "Move"}")
@@ -144,23 +141,16 @@ def parse_document(path):
     """
     '/home/amor/Documents/code_dw/pathformer/dataset/www.svgrepo.com/show/475393/cigarette.svg'
     """
-    #tree = ET.parse(path)
-    #root = tree.getroot()
-
     my_paths = create_str_command([SpecialTokens.START.value])
 
     paths, attributes, *other_attrs = svg2paths(path)
-    new_paths = list()
-    for p, attrs in zip(paths, attributes):
-        print(p, attrs, {p})
-        tf = parse_transform(attrs["transform"])
-        new_path = transform(p, tf)
+    for pa, attrs in zip(paths, attributes):
+        if "transform" in attrs:
+            tf = parse_transform(attrs["transform"])
+            new_path = transform(pa, tf)
+        else:
+            new_path = pa
         my_paths.extend(SVGPath.parse_node(new_path, attrs))
-
-    #for child in root:
-    #    node_type = child.tag.split("}")[1]
-    #    if node_type == "path" and child.attrib.get("d"):
-    #        paths.extend(SVGPath.parse_node(child.attrib))
 
     my_paths.extend(create_str_command([SpecialTokens.END.value]))
 

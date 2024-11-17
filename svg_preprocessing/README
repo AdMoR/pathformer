@@ -13,9 +13,9 @@ svgo --config=svgo.config.mjs -i output.svg   -p 1 --pretty --indent 2 --multipa
 
 A whole folder can be cleaned up with a recursive cmd :
 ```
-for f in ../svg/*.svg; do
+for f in /media/amor/data/svg_data/svg/*.svg; do
   echo $f
-  svgo --config=../svgo.config.mjs -i $f  -o $f.new
+  svgo --config=/home/amor/Downloads/svg_data/svgo.config.mjs -i $f -o $f.new
   sed 's/data:image\/svg+xml,data:image\/svg+xml,//' $f.new > $f.final
   rm $f.new
 done
@@ -31,3 +31,18 @@ for f in *; do
   sed 's/data:image\/svg+xml,data:image\/svg+xml,//' $f > $f.new.new
 done
 ```
+
+
+## Do it with inkscape
+
+for f in /media/amor/data/svg_data/svg/*.svg; do
+    echo $f
+    export r=$(echo $f | sed -r "s/.+\/(.+)\..+/\1/")
+    inkscape --actions="select-all;object-to-path;export-type:svg;export-filename:./$r.svg;export-do;" $f
+    inkscape ./$r.svg --export-plain-svg --export-type=svg --export-filename=$r_out
+    python3 /usr/share/inkscape/extensions/ungroup_deep.py ./`echo $r`_out.svg > ./`echo $r`_test.svg
+    python3 /usr/share/inkscape/extensions/applytransform.py ./`echo $r`_test.svg > ./`echo $r`_finish.svg
+    rm  ./`echo $r`_out.svg  ./`echo $r`_test.svg ./`echo $r`.svg
+done
+
+

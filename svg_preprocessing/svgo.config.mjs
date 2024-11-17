@@ -6,6 +6,7 @@ export default {
     pretty: true, // boolean
   },
   plugins: [
+    "convertStyleToAttrs",
     "moveGroupAttrsToElems",
     "collapseGroups",
     "mergePaths"

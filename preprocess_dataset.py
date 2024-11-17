@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import shutil
+import multiprocessing
 
 
 def main_processing(input_svg, outdir):
@@ -103,7 +104,19 @@ if __name__ == "__main__":
             register_in_file(f"{input_svg};EmptyFile\n", error_file)
             continue
         try:
-            result = main_processing(input_svg, output_folder_path)
+            p = multiprocessing.Process(target=main_processing, args=(input_svg, output_folder_path))
+            p.start()
+
+            # Wait for 10 seconds or until process finishes
+            p.join(10)
+            if p.is_alive():
+                p.terminate()
+                p.join()
+                raise Exception("Timeout")
+
+            outdir = output_folder_path
+            filename = os.path.basename(input_svg).split(".")[0]
+            result = final_file = f"{os.path.join(outdir, filename)}_final.svg"
             register_in_file(f"{input_svg};{result}\n", index_file)
         except Exception as e:
             print("Error : ", input_svg, " ", str(e))
